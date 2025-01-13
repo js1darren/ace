@@ -1,9 +1,16 @@
 "use strict";
-var LineWidgets = require("../line_widgets").LineWidgets;
+/**
+ * @typedef {import("../edit_session").EditSession} EditSession
+ * @typedef {import("../virtual_renderer").VirtualRenderer & {$textLayer: import("../layer/text").Text &{$lenses: any}}} VirtualRenderer
+ */
+
 var event = require("../lib/event");
 var lang = require("../lib/lang");
 var dom = require("../lib/dom");
 
+/**
+ * @param {VirtualRenderer} renderer
+ */
 function clearLensElements(renderer) {
     var textLayer = renderer.$textLayer;
     var lensElements = textLayer.$lenses;
@@ -12,6 +19,10 @@ function clearLensElements(renderer) {
     textLayer.$lenses = null;
 }
 
+/**
+ * @param {number} changes
+ * @param {VirtualRenderer} renderer
+ */
 function renderWidgets(changes, renderer) {
     var changed = changes & renderer.CHANGE_LINES
         || changes & renderer.CHANGE_FULL
@@ -83,6 +94,9 @@ function renderWidgets(changes, renderer) {
         lensElements.pop().remove();
 }
 
+/**
+ * @param {EditSession} session
+ */
 function clearCodeLensWidgets(session) {
     if (!session.lineWidgets) return;
     var widgetManager = session.widgetManager;
@@ -92,6 +106,12 @@ function clearCodeLensWidgets(session) {
     });
 }
 
+/**
+ *
+ * @param {EditSession} session
+ * @param {import("../../ace-internal").Ace.CodeLense[]} lenses
+ * @return {number}
+ */
 exports.setLenses = function(session, lenses) {
     var firstRow = Number.MAX_VALUE;
 
@@ -117,6 +137,9 @@ exports.setLenses = function(session, lenses) {
     return firstRow;
 };
 
+/**
+ * @param {import("../editor").Editor} editor
+ */
 function attachToEditor(editor) {
     editor.codeLensProviders = [];
     editor.renderer.on("afterRender", renderWidgets);
@@ -132,11 +155,6 @@ function attachToEditor(editor) {
     editor.$updateLenses = function() {
         var session = editor.session;
         if (!session) return;
-
-        if (!session.widgetManager) {
-            session.widgetManager = new LineWidgets(session);
-            session.widgetManager.attach(editor);
-        }
 
         var providersToWaitNum = editor.codeLensProviders.length;
         var lenses = [];
@@ -165,7 +183,7 @@ function attachToEditor(editor) {
             var row = session.documentToScreenRow(cursor);
             var lineHeight = editor.renderer.layerConfig.lineHeight;
             var top = session.getScrollTop() + (row - oldRow) * lineHeight;
-            // special case for the lens on line 0, because it can't be scrolled into view with keyboard 
+            // special case for the lens on line 0, because it can't be scrolled into view with keyboard
             if (firstRow == 0 && scrollTop < lineHeight /4 && scrollTop > -lineHeight/4) {
                 top = -lineHeight;
             }
@@ -179,6 +197,9 @@ function attachToEditor(editor) {
     editor.on("input", editor.$updateLensesOnInput);
 }
 
+/**
+ * @param {import("../editor").Editor} editor
+ */
 function detachFromEditor(editor) {
     editor.off("input", editor.$updateLensesOnInput);
     editor.renderer.off("afterRender", renderWidgets);
@@ -186,12 +207,19 @@ function detachFromEditor(editor) {
         editor.container.removeEventListener("click", editor.$codeLensClickHandler);
 }
 
+/**
+ * @param {import("../editor").Editor} editor
+ * @param {import("../../ace-internal").Ace.CodeLenseProvider} codeLensProvider
+ */
 exports.registerCodeLensProvider = function(editor, codeLensProvider) {
     editor.setOption("enableCodeLens", true);
     editor.codeLensProviders.push(codeLensProvider);
     editor.$updateLensesOnInput();
 };
 
+/**
+ * @param {EditSession} session
+ */
 exports.clear = function(session) {
     exports.setLenses(session, null);
 };

@@ -1,7 +1,3 @@
-if (typeof process !== "undefined") {
-    require("amd-loader");
-}
-
 "use strict";
 
 var EditSession = require("./edit_session").EditSession;
@@ -9,6 +5,7 @@ var MockRenderer = require("./test/mockrenderer").MockRenderer;
 var Editor = require("./editor").Editor;
 var Search = require("./search").Search;
 var assert = require("./test/assertions");
+var Range = require("./range").Range;
 
 module.exports = {
     "test: configure the search object" : function() {
@@ -141,7 +138,7 @@ module.exports = {
     "test: fallback to nonUnicode mode on edge cases": function() {
         var session = new EditSession([
             /* eslint-disable no-octal-escape*/
-            "string with \251 symbol",  // test octal escape sequence
+            "string with \xa9 symbol",  // test octal escape sequence
             "bracket ab{2}"  // test lone quantifier brackets
         ]);
 
@@ -170,6 +167,38 @@ module.exports = {
         var range = search.find(session);
         assert.position(range.start, 1, 0);
         assert.position(range.end, 1, 6);
+    },
+
+    "test: return to unicode mode when possible": function() {
+        var session = new EditSession(["𝓕oo"]);
+
+        var search = new Search().set({
+            needle: "}",
+            regExp: true
+        });
+
+        search.find(session);
+        search.set({
+            needle: "."
+        });
+
+        var range = search.find(session);
+        assert.position(range.start, 0, 0);
+        assert.position(range.end, 0, 2);
+    },
+
+    "test: empty match before surrogate pair": function() {
+        var session = new EditSession(["𝓕oo"]);
+
+        var search = new Search().set({
+            needle: "()",
+            regExp: true,
+            start: new Range(0, 0, 0, 0)
+        });
+
+        var range = search.find(session);
+        assert.position(range.start, 0, 2);
+        assert.position(range.end, 0, 2);
     },
 
     "test: find backwards": function() {
@@ -394,6 +423,30 @@ module.exports = {
         assert.equal(search.replace("ab12", "cd$1"), "cd12");
         assert.equal(search.replace("ab12", "-$&-"), "-ab12-");
         assert.equal(search.replace("ab12", "$$"), "$");
+    },
+
+    "test: replace() should correctly handle $$ in the replacement string": function () {
+        var search = new Search().set({
+            needle: "example"
+        });
+
+        // Expecting $$ to be preserved in the output
+        assert.equal(search.replace("example", "$$test"), "$$test");
+
+        // Expecting $$$$ to be preserved as $$$$
+        assert.equal(search.replace("example", "$$$$test"), "$$$$test");
+        
+        search.set({
+            regExp: true,
+            needle: "(example)"
+        });
+
+        // Tests that $1 is replaced by the text that matches the capturing group.
+        assert.equal(search.replace("example", "$1test"), "exampletest");
+
+        search.set({regExp: false});
+        // Tests that without regular expression, "$1test" is treated as a literal string with $ escape.
+        assert.equal(search.replace("(example)", "$1test"), "$1test");
     },
 
     "test: find all using regular expresion containing $" : function() {

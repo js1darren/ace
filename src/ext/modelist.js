@@ -1,10 +1,13 @@
 "use strict";
 
+/**
+ * @type {Mode[]}
+ */
 var modes = [];
 /**
  * Suggests a mode based on the file extension present in the given path
  * @param {string} path The path to the file
- * @returns {object} Returns an object containing information about the
+ * @returns {Mode} Returns an object containing information about the
  *  suggested mode.
  */
 function getModeForPath(path) {
@@ -20,6 +23,11 @@ function getModeForPath(path) {
 }
 
 class Mode {
+    /**
+     * @param {string} name
+     * @param {string} caption
+     * @param {string} extensions
+     */
     constructor(name, caption, extensions) {
         this.name = name;
         this.caption = caption;
@@ -38,6 +46,10 @@ class Mode {
         this.extRe = new RegExp(re, "gi");
     }
 
+    /**
+     * @param {string} filename
+     * @returns {RegExpMatchArray | null}
+     */
     supportsFile(filename) {
         return filename.match(this.extRe);
     }
@@ -55,9 +67,12 @@ var supportedModes = {
     AQL:         ["aql"],
     AsciiDoc:    ["asciidoc|adoc"],
     ASL:         ["dsl|asl|asl.json"],
+    Assembly_ARM32:["s"],
     Assembly_x86:["asm|a"],
+    Astro:       ["astro"],
     AutoHotKey:  ["ahk"],
     BatchFile:   ["bat|cmd"],
+    Basic:       ["bas|bak"],
     BibTeX:      ["bib"],
     C_Cpp:       ["cpp|c|cc|cxx|h|hh|hpp|ino"],
     C9Search:    ["c9search_results"],
@@ -77,6 +92,7 @@ var supportedModes = {
     D:           ["d|di"],
     Dart:        ["dart"],
     Diff:        ["diff|patch"],
+    Django:      ["djt|html.djt|dj.html|djhtml"],
     Dockerfile:  ["^Dockerfile"],
     Dot:         ["dot"],
     Drools:      ["drl"],
@@ -86,6 +102,7 @@ var supportedModes = {
     Elixir:      ["ex|exs"],
     Elm:         ["elm"],
     Erlang:      ["erl|hrl"],
+    Flix:        ["flix"],
     Forth:       ["frt|fs|ldr|fth|4th"],
     Fortran:     ["f|f90"],
     FSharp:      ["fsi|fs|ml|mli|fsx|fsscript"],
@@ -105,7 +122,7 @@ var supportedModes = {
     Haskell_Cabal: ["cabal"],
     haXe:        ["hx"],
     Hjson:       ["hjson"],
-    HTML:        ["html|htm|xhtml|vue|we|wpy"],
+    HTML: ["html|htm|xhtml|we|wpy"],
     HTML_Elixir: ["eex|html.eex"],
     HTML_Ruby:   ["erb|rhtml|html.erb"],
     INI:         ["ini|conf|cfg|prefs"],
@@ -114,7 +131,7 @@ var supportedModes = {
     Jack:        ["jack"],
     Jade:        ["jade|pug"],
     Java:        ["java"],
-    JavaScript:  ["js|jsm|jsx|cjs|mjs"],
+    JavaScript:  ["js|jsm|cjs|mjs"],
     JEXL:        ["jexl"],
     JSON:        ["json"],
     JSON5:       ["json5"],
@@ -148,6 +165,7 @@ var supportedModes = {
     MIXAL:       ["mixal"],
     MUSHCode:    ["mc|mush"],
     MySQL:       ["mysql"],
+    Nasal:       ["nas"],
     Nginx:       ["nginx|conf"],
     Nim:         ["nim"],
     Nix:         ["nix"],
@@ -170,6 +188,7 @@ var supportedModes = {
     Prolog:      ["plg|prolog"],
     Properties:  ["properties"],
     Protobuf:    ["proto"],
+    PRQL:        ["prql"],
     Puppet:      ["epp|pp"],
     Python:      ["py"],
     QML:         ["qml"],
@@ -213,20 +232,20 @@ var supportedModes = {
     TSX:         ["tsx"],
     Turtle:      ["ttl"],
     Twig:        ["twig|swig"],
-    Typescript:  ["ts|typescript|str"],
+    Typescript:  ["ts|mts|cts|typescript|str"],
     Vala:        ["vala"],
     VBScript:    ["vbs|vb"],
     Velocity:    ["vm"],
     Verilog:     ["v|vh|sv|svh"],
     VHDL:        ["vhd|vhdl"],
     Visualforce: ["vfp|component|page"],
+    Vue: ["vue"],
     Wollok:      ["wlk|wpgm|wtest"],
     XML:         ["xml|rdf|rss|wsdl|xslt|atom|mathml|mml|xul|xbl|xaml"],
     XQuery:      ["xq"],
     YAML:        ["yaml|yml"],
     Zeek:        ["zeek|bro"],
-    // Add the missing mode "Django" to ext-modelist
-    Django:      ["html"]
+    Zig:         ["zig"]
 };
 
 var nameOverrides = {
@@ -246,6 +265,9 @@ var nameOverrides = {
     AutoHotKey: "AutoHotkey / AutoIt"
 };
 
+/**
+ * @type {Record<string, Mode>}
+ */
 var modesByName = {};
 for (var name in supportedModes) {
     var data = supportedModes[name];
